@@ -147,6 +147,7 @@ var create_email = false;
 var final_transcript = '';
 var recognizingRu = false;
 var recognizingDE = false;
+var switchedToGerman = false;
 var ignore_onend;
 var start_timestamp;
 if (!('webkitSpeechRecognition' in window)) {
@@ -263,20 +264,22 @@ if (!('webkitSpeechRecognition' in window)) {
 
   recognitionRu.onend = function() {
     recognizingRu = false;
-    const punctuation = /[?.!]/g;
-    const cleanedStrVoice = final_transcript.replace(punctuation, '');
-    const cleanedStrExpRes = lektion[lektionsNr][1].replace(punctuation, '');
-    document.getElementById("regexResult").innerHTML = 
-      cleanedStrVoice + " <br> " + cleanedStrExpRes;
-    if(cleanedStrVoice.includes(cleanedStrExpRes)) {
-      speakDE("sehr gut");
-      next();
-    } else {
-      speakDE("dies war leider falsch")
-    }
-    
-    if (ignore_onend) {
-      return;
+    if (!switchedToGerman) {
+      const punctuation = /[?.!]/g;
+      const cleanedStrVoice = final_transcript.replace(punctuation, '');
+      const cleanedStrExpRes = lektion[lektionsNr][1].replace(punctuation, '');
+      document.getElementById("regexResult").innerHTML = 
+        cleanedStrVoice + " <br> " + cleanedStrExpRes;
+      if(cleanedStrVoice.includes(cleanedStrExpRes)) {
+        // speakDE("sehr gut", next); -> already covered by onresult
+        // next();
+      } else {
+        speakDE("dies war leider falsch")
+      }
+      
+      if (ignore_onend) {
+        return;
+      }
     }
     start_img.src = 'mic.gif';
     showInfo('');
@@ -313,8 +316,8 @@ if (!('webkitSpeechRecognition' in window)) {
     }
     
     if(cleanedStrVoice.includes(cleanedStrExpRes)) {
-      speakDE("sehr gut");
-      next();
+      speakDE("sehr gut", next);
+      // next();
     }
   };
 
@@ -376,8 +379,6 @@ function showInfo(s) {
 }
 
 function next() {
-  recognitionDE.stop();
-  recognitionRu.stop();
   if (lektionsNr < lektion.length - 1) {
     lektionsNr++;
     zeigeLektion(lektionsNr);
@@ -415,27 +416,44 @@ function RateToOne() {
       startRecognitionRu(event);
     }
 
+    stopRecognitions();
     speechSynthesis.speak(utterance);
 
     
 }
 
-  function speakDE(text2) {
+  function speakDE(text2, fnc = null) {
     // Create a new instance of SpeechSynthesisUtterance
     const utterance2 = new SpeechSynthesisUtterance(text2);
     
-    // Set the language to Russian
+    // Set the language to German
     utterance2.lang = 'de-DE';
     
-    // Select a Russian voice if available
+    // Select a German voice if available
     const voices = speechSynthesis.getVoices();
     const germanVoice = voices.find(voice => voice.lang === 'de-DE');
     if (germanVoice) {
         utterance2.voice = germanVoice;
     }
     
+    if (fnc == null) {
+      utterance2.onend = function(event) {}
+    } else {
+      utterance2.onend = fnc;
+    }
+
+    stopRecognitions();
     // Speak the text
     speechSynthesis.speak(utterance2);
+}
+
+function stopRecognitions() {
+  if (recognizingDE)
+      recognitionDE.stop();
+    if (recognitionRu) {
+      switchedToGerman = true;
+      recognitionRu.stop();
+    }
 }
 
 function switchToRussian() {
@@ -444,6 +462,7 @@ function switchToRussian() {
 }
 
 function switchToGerman() {
+  switchedToGerman = true;
   recognitionRu.stop();
   startRecognitionDE();
 }
