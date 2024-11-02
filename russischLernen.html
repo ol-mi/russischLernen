@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
-<title>Web Speech API Demo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>lerne russisch</title>
 <style>
   * {
     font-family: Verdana, Arial, sans-serif;
@@ -80,50 +81,53 @@
     padding: 0;
   }
 </style>
-<h1 class="center" id="headline">
-</h1>
-<div id="info">
-  <p id="info_start">Click on the microphone icon and begin speaking.</p>
-  <p id="info_speak_now">Speak now.</p>
-  <p id="info_no_speech">No speech was detected. You may need to adjust your
-    <a href="//support.google.com/chrome/bin/answer.py?hl=en&amp;answer=1407892">
-      microphone settings</a>.</p>
-  <p id="info_no_microphone" style="display:none">
-    No microphone was found. Ensure that a microphone is installed and that
-    <a href="//support.google.com/chrome/bin/answer.py?hl=en&amp;answer=1407892">
-    microphone settings</a> are configured correctly.</p>
-  <p id="info_allow">Click the "Allow" button above to enable your microphone.</p>
-  <p id="info_denied">Permission to use microphone was denied.</p>
-  <p id="info_blocked">Permission to use microphone is blocked. To change,
-    go to chrome://settings/contentExceptions#media-stream</p>
-  <p id="info_upgrade">Web Speech API is not supported by this browser.
-     Upgrade to <a href="//www.google.com/chrome">Chrome</a>
-     version 25 or later.</p>
-</div>
-<div id="text_de_ru">
-</div>
-<button onclick="javascript: retry()">russische Aussprache wiederholen</button>
-<button onclick="javascript: prev()">vorige Lektion</button>
-<button onclick="javascript: next()">nächste Lektion</button>
-<div id="rate-control">
-  <label for="rate">
-    <button onclick="RateToOne()">Sprechgeschwindigkeit (klicke für 1)</button></label>
-  <input type="range" min="0.5" max="2" value="1" step="0.1" id="rate" />
-</div>
+<button id="startButton" onclick="start()">let's start</button>
+<div id="content" style="visibility: hidden;">
+  <h1 class="center" id="headline">
+  </h1>
+      <div id="info">
+        <p id="info_start">Click on the microphone icon and begin speaking.</p>
+        <p id="info_speak_now">Speak now.</p>
+        <p id="info_no_speech">No speech was detected. You may need to adjust your
+          <a href="//support.google.com/chrome/bin/answer.py?hl=en&amp;answer=1407892">
+            microphone settings</a>.</p>
+        <p id="info_no_microphone" style="display:none">
+          No microphone was found. Ensure that a microphone is installed and that
+          <a href="//support.google.com/chrome/bin/answer.py?hl=en&amp;answer=1407892">
+          microphone settings</a> are configured correctly.</p>
+        <p id="info_allow">Click the "Allow" button above to enable your microphone.</p>
+        <p id="info_denied">Permission to use microphone was denied.</p>
+        <p id="info_blocked">Permission to use microphone is blocked. To change,
+          go to chrome://settings/contentExceptions#media-stream</p>
+        <p id="info_upgrade">Web Speech API is not supported by this browser.
+          Upgrade to <a href="//www.google.com/chrome">Chrome</a>
+          version 25 or later.</p>
+      </div>
+      <div id="text_de_ru">
+      </div>
+      <button onclick="javascript: retry()">russische Aussprache wiederholen</button><br>
+      <button onclick="javascript: prev()">vorige Lektion</button>
+      <button onclick="javascript: next()">nächste Lektion</button><br>
+      <button onclick="RateToOne()">Sprechgeschwindigkeit auf 1 zurücksetzen</button>
+      <div id="rate-control">
+        <label for="rate">Sprechgeschwindigkeit
+         </label>
+        <input type="range" min="0.5" max="2" value="1" step="0.1" id="rate" />
+      </div>
 
-<div class="right">
-  <button id="start_button" onclick="startButton(event)">
-    <img id="start_img" src="mic.gif" alt="Start"></button>
-</div>
-<div id="results">
-  <span id="final_span" class="final"></span>
-  <span id="interim_span" class="interim"></span>
-  <p>
-</div>
-<div id="regexResult">
+      <div class="right">
+        <button id="start_button" onclick="startButton(event)">
+          <img id="start_img" src="mic.gif" alt="Start"></button>
+      </div>
+      <div id="results">
+        <span id="final_span" class="final"></span>
+        <span id="interim_span" class="interim"></span>
+        <p>
+      </div>
+      <div id="regexResult">
+      </div>
 </div>
 <script>
-showInfo('info_start');
 
 var create_email = false;
 var final_transcript = '';
@@ -324,11 +328,17 @@ function retry() {
 }
 
 const lektion = 
-  [["Mein Name ist Michael.", "Меня зовут Михаэль."],
-  ["Guten Tag. Mein Name ist Michael.", "Добрый день. Меня зовут Михаэль."],
-  ["Lass uns bekannt machen.", "Давайте познакомимся."],
-  ["Guten Morgen.", "Доброе утро."]];
-lektionsNr = getUrlParam("nr");;
+    [["Mein Name ist Michael.", "Меня зовут Михаэль."],
+    ["Guten Tag. Mein Name ist Michael.", "Добрый день. Меня зовут Михаэль."],
+    ["Lass uns bekannt machen.", "Давайте познакомимся."],
+    ["Guten Morgen.", "Доброе утро."]];
+  lektionsNr = getUrlParam("nr");;
 
-zeigeLektion(lektionsNr);
+function start() {
+  document.getElementById("startButton").style.visibility = "hidden";
+  document.getElementById("content").style.visibility = "visible";
+
+  zeigeLektion(lektionsNr);
+  showInfo('info_start');
+}
 </script>
