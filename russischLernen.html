@@ -116,7 +116,7 @@
       </div>
 
       <div class="right">
-        <button id="start_button" onclick="startButton(event)">
+        <button id="start_button" onclick="startRecognitionRu(event)">
           <img id="start_img" src="mic.gif" alt="Start"></button>
       </div>
       <div id="results">
@@ -126,29 +126,121 @@
       </div>
       <div id="regexResult">
       </div>
+      <div>
+        Sprachsteuerung:
+        <ul>
+          <li>OK (Ок): um von russisch zu deutsch zu wechseln für Kommandos</li>
+          <li>Schneller: Aussprachegeschwindingkeit erhöhen</li>
+          <li>Langsamer: Aussprachegeschwindigkeit verringern</li>
+          <li>Eins: Aussprachegeschwindigkeit auf eins (Normal setzen)</li>
+          <li>Nochmal/Wiederholen: Russische Aussprache nochmal vorlesen</li>
+          <li>Deutsch: Deutschen Text mit russischer Übersetzung nochmal vorlesen.</li>
+          <li>Vor: zur vorigen Übung</li>
+          <li>Weiter: zur nächsten Übung</li>
+          <li>Go: weiter mit russischer Eingabe</li>
+        </ul>
+      </div>
 </div>
 <script>
 
 var create_email = false;
 var final_transcript = '';
-var recognizing = false;
+var recognizingRu = false;
+var recognizingDE = false;
 var ignore_onend;
 var start_timestamp;
 if (!('webkitSpeechRecognition' in window)) {
   upgrade();
 } else {
   start_button.style.display = 'inline-block';
-  var recognition = new webkitSpeechRecognition();
-  recognition.continuous = true;
-  recognition.interimResults = true;
 
-  recognition.onstart = function() {
-    recognizing = true;
+    var recognitionDE = new webkitSpeechRecognition();
+    recognitionDE.continuous = true;
+    recognitionDE.interimResults = false;
+
+    recognitionDE.onstart = function() {
+      recognizingDE = true;
+      showInfo('info_speak_now');
+      start_img.src = 'mic-animate.gif';
+    };
+
+    recognitionDE.onerror = function(event) {
+      if (event.error == 'no-speech') {
+        start_img.src = 'mic.gif';
+        showInfo('info_no_speech');
+        ignore_onend = true;
+      }
+      if (event.error == 'audio-capture') {
+        start_img.src = 'mic.gif';
+        showInfo('info_no_microphone');
+        ignore_onend = true;
+      }
+      if (event.error == 'not-allowed') {
+        if (event.timeStamp - start_timestamp < 100) {
+          showInfo('info_blocked');
+        } else {
+          showInfo('info_denied');
+        }
+        ignore_onend = true;
+      }
+    };
+
+    recognitionDE.onend = function() {
+      recognizingDE = false;
+      // not needed should be all handled in the onresult field
+    };
+
+    recognitionDE.onresult = function(event) {
+      var interim_transcript = '';
+      for (var i = event.resultIndex; i < event.results.length; ++i) {
+          final_transcript += event.results[i][0].transcript;
+      }
+
+      final_span.innerHTML = linebreak(final_transcript);
+      interim_span.innerHTML = "";
+
+      /*
+                <li>Schneller: Aussprachegeschwindingkeit erhöhen</li>
+                <li>Langsamer: Aussprachegeschwindigkeit verringern</li>
+                <li>Eins: Aussprachegeschwindigkeit auf eins (Normal setzen)</li>
+                <li>Nochmal/Wiederholen: Russische Aussprache nochmal vorlesen</li>
+                <li>Deutsch: Deutschen Text mit russischer Übersetzung nochmal vorlesen.</li>
+                <li>Vor: zur vorigen Übung</li>
+                <li>Weiter: zur nächsten Übung</li>
+                <li>Go: weiter mit russischer Eingabe</li>
+      */
+      final_transcript = final_transcript.toLowerCase();
+      if(final_transcript.endsWith("schneller")) {
+        const rate = document.querySelector("#rate");
+        rate.value += 0.2;
+      } else if(final_transcript.endsWith("langsamer")) {
+        const rate = document.querySelector("#rate");
+        rate.value -= 0.2;
+      } else if(final_transcript.endsWith("nochmal") || final_transcript.endsWith("wiederholen")) {
+        retry();
+      }  else if(final_transcript.endsWith("deutsch")) {
+        zeigeLektion(lektionsNr);
+      } else if(final_transcript.endsWith("vor")) {
+        prev();
+      }  else if(final_transcript.endsWith("weiter")) {
+        next();
+      } else if(final_transcript.endsWith("go")) {
+        switchToRussian();
+      } 
+    };
+
+
+  var recognitionRu = new webkitSpeechRecognition();
+  recognitionRu.continuous = true;
+  recognitionRu.interimResults = true;
+
+  recognitionRu.onstart = function() {
+    recognizingRu = true;
     showInfo('info_speak_now');
     start_img.src = 'mic-animate.gif';
   };
 
-  recognition.onerror = function(event) {
+  recognitionRu.onerror = function(event) {
     if (event.error == 'no-speech') {
       start_img.src = 'mic.gif';
       showInfo('info_no_speech');
@@ -169,8 +261,8 @@ if (!('webkitSpeechRecognition' in window)) {
     }
   };
 
-  recognition.onend = function() {
-    recognizing = false;
+  recognitionRu.onend = function() {
+    recognizingRu = false;
     const punctuation = /[?.!]/g;
     const cleanedStrVoice = final_transcript.replace(punctuation, '');
     const cleanedStrExpRes = lektion[lektionsNr][1].replace(punctuation, '');
@@ -196,7 +288,7 @@ if (!('webkitSpeechRecognition' in window)) {
     }
   };
 
-  recognition.onresult = function(event) {
+  recognitionRu.onresult = function(event) {
     var interim_transcript = '';
     for (var i = event.resultIndex; i < event.results.length; ++i) {
       if (event.results[i].isFinal) {
@@ -208,10 +300,26 @@ if (!('webkitSpeechRecognition' in window)) {
     // final_transcript = capitalize(final_transcript);
     final_span.innerHTML = linebreak(final_transcript);
     interim_span.innerHTML = linebreak(interim_transcript);
-  };
-}
 
-function upgrade() {
+    const punctuation = /[?.!]/g;
+    const cleanedStrVoice = final_transcript.replace(punctuation, '');
+    const cleanedStrExpRes = lektion[lektionsNr][1].replace(punctuation, '');
+    document.getElementById("regexResult").innerHTML = 
+      cleanedStrVoice + " <br> " + cleanedStrExpRes;
+    
+    const lower_case = cleanedStrVoice.toLowerCase();
+    if(lower_case.endsWith("ок") || lower_case.endsWith("окей")) {
+      switchToGerman();
+    }
+    
+    if(cleanedStrVoice.includes(cleanedStrExpRes)) {
+      speakDE("sehr gut");
+      next();
+    }
+  };
+
+}
+  function upgrade() {
   start_button.style.visibility = 'hidden';
   showInfo('info_upgrade');
 }
@@ -224,14 +332,29 @@ function linebreak(s) {
 
 var first_char = /\S/;
 
-function startButton(event) {
-  if (recognizing) {
-    recognition.stop();
+function startRecognitionRu(event) {
+  if (recognizingRu) {
+    recognitionRu.stop();
     return;
   }
   final_transcript = '';
-  recognition.lang = "ru-RU";
-  recognition.start();
+  recognitionRu.lang = "ru-RU";
+  recognitionRu.start();
+  ignore_onend = false;
+  final_span.innerHTML = '';
+  interim_span.innerHTML = '';
+  start_img.src = 'mic-slash.gif';
+  start_timestamp = event.timeStamp;
+}
+
+function startRecognitionDE(event) {
+  if (recognizingDE) {
+    recognitionDE.stop();
+    return;
+  }
+  final_transcript = '';
+  recognitionDE.lang = "de-DE";
+  recognitionDE.start();
   ignore_onend = false;
   final_span.innerHTML = '';
   interim_span.innerHTML = '';
@@ -253,6 +376,8 @@ function showInfo(s) {
 }
 
 function next() {
+  recognitionDE.stop();
+  recognitionRu.stop();
   if (lektionsNr < lektion.length - 1) {
     lektionsNr++;
     zeigeLektion(lektionsNr);
@@ -285,8 +410,14 @@ function RateToOne() {
     }
     const rate = document.querySelector("#rate");
     utterance.rate = rate.value;
-    // Speak the text
+    
+    utterance.onend = function (event) {
+      startRecognitionRu(event);
+    }
+
     speechSynthesis.speak(utterance);
+
+    
 }
 
   function speakDE(text2) {
@@ -307,7 +438,15 @@ function RateToOne() {
     speechSynthesis.speak(utterance2);
 }
 
+function switchToRussian() {
+  recognitionDE.stop();
+  startRecognitionRu(null);
+}
 
+function switchToGerman() {
+  recognitionRu.stop();
+  startRecognitionDE();
+}
 
 function zeigeLektion(nr) {
   document.getElementById("headline").textContent = "Lektion " + nr + ": Begrüßen";
@@ -327,31 +466,6 @@ function retry() {
   speakRu(lektion[lektionsNr][1]);
 }
 
-const lektion = 
-  [
-    ["Wie heißt du?"],["Как тебя зовут?"],
-    ["Mein Name ist M.", "Меня зовут ем."],
-    ["Guten Tag. Mein Name ist M.", "Добрый день. Меня зовут ем."],
-    ["Lass uns bekannt machen.", "Давайте познакомимся."],
-    ["Guten Morgen.", "Доброе утро."],
-    ["Guten Tag."],["Добрый день."],
-    ["Guten Abend."],["Добрый вечер."],
-    ["Wie geht es dir?"],["Как дела?"],
-    ["Mir geht es gut."],["У меня всё хорошо."],
-    ["Gut und dir?"],["Хорошо, а у тебя?"],
-    ["Schlecht!"],["Плохо!"],
-    ["Mir geht es ausgezeichnet!"],["У меня всё отлично!"],
-    ["Wo wohnst du?"],["Где ты живёшь?"],
-    ["Wo kommst du her?"],["Откуда ты?"],
-    ["Ich komme aus Deutschland."],["Я из Германии."],
-    ["Ich komme aus Russland."],["Я из России."],
-    ["Ich komme aus Europa."],["Я из России."],
-    ["Wie alt bist du?"],["Сколько тебе лет?"],
-    ["Ich bin volljährig."],["Я совершеннолетний."],
-    ["Ich bin 20."],["Мне 20 лет."]
-  ];
-  lektionsNr = getUrlParam("nr");;
-
 function start() {
   document.getElementById("startButton").style.visibility = "hidden";
   document.getElementById("content").style.visibility = "visible";
@@ -359,4 +473,32 @@ function start() {
   zeigeLektion(lektionsNr);
   showInfo('info_start');
 }
+
+const lektion = 
+  [
+    ["Wie heißt du?" , "Как тебя зовут?"],
+    ["Mein Name ist M.", "Меня зовут ем."],
+    ["Guten Tag. Mein Name ist M.", "Добрый день. Меня зовут ем."],
+    ["Lass uns bekannt machen.", "Давайте познакомимся."],
+    ["Guten Morgen.", "Доброе утро."],
+    ["Guten Tag." , "Добрый день."],
+    ["Guten Abend." , "Добрый вечер."],
+    ["Wie geht es dir?" , "Как дела?"],
+    ["Mir geht es gut." , "У меня всё хорошо."],
+    ["Gut und dir?" , "Хорошо, а у тебя?"],
+    ["Schlecht!" , "Плохо!"],
+    ["Mir geht es ausgezeichnet!" , "У меня всё отлично!"],
+    ["Wo wohnst du?" , "Где ты живёшь?"],
+    ["Wo kommst du her?" , "Откуда ты?"],
+    ["Ich komme aus Deutschland." , "Я из Германии."],
+    ["Ich komme aus Russland." , "Я из России."],
+    ["Ich komme aus Europa.", "Я из России."],
+    ["Wie alt bist du?" , "Сколько тебе лет?"],
+    ["Ich bin volljährig." , "Я совершеннолетний."],
+    ["Ich bin 20." , "Мне 20 лет."]
+  ];
+
+  lektionsNr = getUrlParam("nr");
+
+
 </script>
