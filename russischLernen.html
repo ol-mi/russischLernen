@@ -211,6 +211,8 @@ if (!('webkitSpeechRecognition' in window)) {
                 <li>Go: weiter mit russischer Eingabe</li>
       */
       final_transcript = final_transcript.toLowerCase();
+      const punctuation = /[?.!]/g;
+      final_transcript = final_transcript.replace(punctuation, '');
       if(final_transcript.endsWith("schneller")) {
         const rate = document.querySelector("#rate");
         rate.value += 0.2;
@@ -362,7 +364,7 @@ function startRecognitionDE(event) {
   final_span.innerHTML = '';
   interim_span.innerHTML = '';
   start_img.src = 'mic-slash.gif';
-  start_timestamp = event.timeStamp;
+  //start_timestamp = event.timeStamp;
 }
 
 function showInfo(s) {
