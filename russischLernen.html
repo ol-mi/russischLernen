@@ -211,7 +211,7 @@ if (!('webkitSpeechRecognition' in window)) {
                 <li>Go: weiter mit russischer Eingabe</li>
       */
       final_transcript = final_transcript.toLowerCase();
-      const punctuation = /[?.!]/g;
+      const punctuation = /[,?.!]/g;
       final_transcript = final_transcript.replace(punctuation, '');
       if(final_transcript.endsWith("schneller")) {
         const rate = document.querySelector("#rate");
@@ -267,7 +267,7 @@ if (!('webkitSpeechRecognition' in window)) {
   recognitionRu.onend = function() {
     recognizingRu = false;
     if (!switchedToGerman) {
-      const punctuation = /[?.!]/g;
+      const punctuation = /[,?.!]/g;
       const cleanedStrVoice = final_transcript.replace(punctuation, '');
       const cleanedStrExpRes = lektion[lektionsNr][1].replace(punctuation, '');
       document.getElementById("regexResult").innerHTML = 
@@ -306,7 +306,7 @@ if (!('webkitSpeechRecognition' in window)) {
     final_span.innerHTML = linebreak(final_transcript);
     interim_span.innerHTML = linebreak(interim_transcript);
 
-    const punctuation = /[?.!]/g;
+    const punctuation = /[,?.!]/g;
     const cleanedStrVoice = final_transcript.replace(punctuation, '');
     const cleanedStrExpRes = lektion[lektionsNr][1].replace(punctuation, '');
     document.getElementById("regexResult").innerHTML = 
@@ -513,10 +513,21 @@ const lektion =
     ["Wo kommst du her?" , "Откуда ты?"],
     ["Ich komme aus Deutschland." , "Я из Германии."],
     ["Ich komme aus Russland." , "Я из России."],
-    ["Ich komme aus Europa.", "Я из России."],
+    ["Ich komme aus Europa.", "я из Европы."],
     ["Wie alt bist du?" , "Сколько тебе лет?"],
     ["Ich bin volljährig." , "Я совершеннолетний."],
-    ["Ich bin 20." , "Мне 20 лет."]
+    ["Ich bin 20." , "Мне 20 лет."],
+
+    ["Tschüß.", "Пока."],
+    ["Auf Wiedersehen.", "До свидания."],
+    ["Bis morgen.", "До завтра."],
+    ["Mach's gut!", "Удачи!"],
+    ["Alles Gute.", "Всего хорошего."],
+    ["Eins. Zwei. Drei. Vier. Fünf.", "один. два. три. четыре. пять."],
+    ["Sechs. Sieben. Acht. Neun. Zehn.", "шесть. семь. восемь. девять. десять."],
+    ["Ich. Du. Er. Sie. Es.", "Я. Ты. Он. она. оно."],
+    ["Wir. Ihr. Sie.", "Мы. Вы. Они."],
+    ["Danke.", "Спасибо."]
   ];
 
   lektionsNr = getUrlParam("nr");
