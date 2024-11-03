@@ -268,8 +268,8 @@ if (!('webkitSpeechRecognition' in window)) {
     recognizingRu = false;
     if (!switchedToGerman) {
       const punctuation = /[,?.!]/g;
-      const cleanedStrVoice = final_transcript.replace(punctuation, '');
-      const cleanedStrExpRes = lektion[lektionsNr][1].replace(punctuation, '');
+      const cleanedStrVoice = final_transcript.replace(punctuation, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+      const cleanedStrExpRes = lektion[lektionsNr][1].replace(punctuation, '').replace(/\s+/g, ' ').trim().toLowerCase();
       document.getElementById("regexResult").innerHTML = 
         cleanedStrVoice + " <br> " + cleanedStrExpRes;
       if(cleanedStrVoice.includes(cleanedStrExpRes)) {
@@ -307,12 +307,12 @@ if (!('webkitSpeechRecognition' in window)) {
     interim_span.innerHTML = linebreak(interim_transcript);
 
     const punctuation = /[,?.!]/g;
-    const cleanedStrVoice = final_transcript.replace(punctuation, '');
-    const cleanedStrExpRes = lektion[lektionsNr][1].replace(punctuation, '');
+    const cleanedStrVoice = final_transcript.replace(punctuation, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+    const cleanedStrExpRes = lektion[lektionsNr][1].replace(punctuation, '').replace(/\s+/g, ' ').trim().toLowerCase();
     document.getElementById("regexResult").innerHTML = 
       cleanedStrVoice + " <br> " + cleanedStrExpRes;
     
-    const lower_case = cleanedStrVoice.toLowerCase();
+    const lower_case = cleanedStrVoice;
     if(lower_case.endsWith("ок") || lower_case.endsWith("окей")) {
       switchToGerman();
     }
