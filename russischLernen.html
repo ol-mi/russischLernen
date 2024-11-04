@@ -398,8 +398,7 @@ function RateToOne() {
   const rate = document.querySelector("#rate");
   rate.value = 1;
 }
-  async function speakRu(text) {
-    stopRecognitions();
+  function speakRu(text) {
     // Create a new instance of SpeechSynthesisUtterance
     const utterance = new SpeechSynthesisUtterance(text);
     
@@ -419,13 +418,13 @@ function RateToOne() {
       startRecognitionRu(event);
     }
 
+    stopRecognitions();
     speechSynthesis.speak(utterance);
 
     
 }
-  
-async function speakDE(text2, fnc = null) {
-    stopRecognitions();
+
+  function speakDE(text2, fnc = null) {
     // Create a new instance of SpeechSynthesisUtterance
     const utterance2 = new SpeechSynthesisUtterance(text2);
     
@@ -445,20 +444,18 @@ async function speakDE(text2, fnc = null) {
       utterance2.onend = fnc;
     }
 
+    stopRecognitions();
     // Speak the text
     speechSynthesis.speak(utterance2);
 }
 
-async function stopRecognitions() {
+function stopRecognitions() {
   if (recognizingDE)
       recognitionDE.stop();
-  if (recognitionRu) {
-    switchedToGerman = true;
-    recognitionRu.stop();
-  }
-  while (window.speechSynthesis.speaking) {
-    await(300);
-  }
+    if (recognitionRu) {
+      switchedToGerman = true;
+      recognitionRu.stop();
+    }
 }
 
 function switchToRussian() {
@@ -526,11 +523,12 @@ const lektion =
     ["Bis morgen.", "До завтра."],
     ["Mach's gut!", "Удачи!"],
     ["Alles Gute.", "Всего хорошего."],
-    ["Eins. Zwei. Drei. Vier. Fünf.", "один. два. три. четыре. пять."],
-    ["Sechs. Sieben. Acht. Neun. Zehn.", "шесть. семь. восемь. девять. десять."],
+//    ["Eins. Zwei. Drei. Vier. Fünf.", "один. два. три. четыре. пять."],
+//    ["Sechs. Sieben. Acht. Neun. Zehn.", "шесть. семь. восемь. девять. десять."],
     ["Ich. Du. Er. Sie. Es.", "Я. Ты. Он. она. оно."],
     ["Wir. Ihr. Sie.", "Мы. Вы. Они."],
     ["Danke.", "Спасибо."],
+
 
     // Gaststätte
     ["Was wünschen Sie?", "Что вы хотите?"],
@@ -545,7 +543,7 @@ const lektion =
     ["Haben Sie die Speisekarte?", "У вас есть меню?"],
     ["Ich nehme grieschischen Salat.", "Я буду греческий салат."],
     ["Ich nehme Bortsch.", "Я буду борщ."],
-    ["Die Rechnung bitte.", "Счет, пожалуйста."]
+    ["Die Rechnung bitte.", "Счет, пожалуйста."],
   ];
 
   lektionsNr = getUrlParam("nr");
