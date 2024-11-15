@@ -150,6 +150,8 @@ var recognizingDE = false;
 var switchedToGerman = false;
 var ignore_onend;
 var start_timestamp;
+var russianRecognitionCorrect = false;
+
 if (!('webkitSpeechRecognition' in window)) {
   upgrade();
 } else {
@@ -239,6 +241,7 @@ if (!('webkitSpeechRecognition' in window)) {
 
   recognitionRu.onstart = function() {
     recognizingRu = true;
+    russianRecognitionCorrect = false;
     showInfo('info_speak_now');
     start_img.src = 'mic-animate.gif';
   };
@@ -264,36 +267,21 @@ if (!('webkitSpeechRecognition' in window)) {
     }
   };
 
-  recognitionRu.onend = function() {
-    recognizingRu = false;
-    if (!switchedToGerman) {
-      const punctuation = /[,?.!]/g;
-      const cleanedStrVoice = final_transcript.replace(punctuation, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
-      const cleanedStrExpRes = lektion[lektionsNr][1].replace(punctuation, '').replace(/\s+/g, ' ').trim().toLowerCase();
-      document.getElementById("regexResult").innerHTML = 
-        cleanedStrVoice + " <br> " + cleanedStrExpRes;
-      if(cleanedStrVoice.includes(cleanedStrExpRes)) {
-        // speakDE("sehr gut", next); -> already covered by onresult
-        // next();
-      } else {
-        speakDE("dies war leider falsch")
-      }
-      
-      if (ignore_onend) {
-        return;
-      }
-    }
-    start_img.src = 'mic.gif';
-    showInfo('');
-    if (window.getSelection) {
-      window.getSelection().removeAllRanges();
-      var range = document.createRange();
-      range.selectNode(document.getElementById('final_span'));
-      window.getSelection().addRange(range);
-    }
-  };
+}
+  function upgrade() {
+  start_button.style.visibility = 'hidden';
+  showInfo('info_upgrade');
+}
 
-  recognitionRu.onresult = function(event) {
+var two_line = /\n\n/g;
+var one_line = /\n/g;
+function linebreak(s) {
+  return s.replace(two_line, '<p></p>').replace(one_line, '<br>');
+}
+
+var first_char = /\S/;
+
+function onResultRu(event, resolve) {
     var interim_transcript = '';
     for (var i = event.resultIndex; i < event.results.length; ++i) {
       if (event.results[i].isFinal) {
@@ -318,38 +306,65 @@ if (!('webkitSpeechRecognition' in window)) {
     }
     
     if(cleanedStrVoice.includes(cleanedStrExpRes)) {
-      speakDE("sehr gut", next);
-      // next();
+      recognitionRu.stop();
+      resolve(final_transcript);
     }
   };
 
-}
-  function upgrade() {
-  start_button.style.visibility = 'hidden';
-  showInfo('info_upgrade');
-}
+function onEndRu(final_transcript) {
+    recognizingRu = false;
+    if (!switchedToGerman) {
+      const punctuation = /[,?.!]/g;
+      const cleanedStrVoice = final_transcript.replace(punctuation, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+      const cleanedStrExpRes = lektion[lektionsNr][1].replace(punctuation, '').replace(/\s+/g, ' ').trim().toLowerCase();
+      document.getElementById("regexResult").innerHTML = 
+        cleanedStrVoice + " <br> " + cleanedStrExpRes;
+      if(cleanedStrVoice.includes(cleanedStrExpRes)) {
+        russianRecognitionCorrect = true;
+      } else {
+        russianRecognitionCorrect = false;
+      }
+      
+      if (ignore_onend) {
+        return;
+      }
+    }
+    start_img.src = 'mic.gif';
+    showInfo('');
+    if (window.getSelection) {
+      window.getSelection().removeAllRanges();
+      var range = document.createRange();
+      range.selectNode(document.getElementById('final_span'));
+      window.getSelection().addRange(range);
+    }
+  };
 
-var two_line = /\n\n/g;
-var one_line = /\n/g;
-function linebreak(s) {
-  return s.replace(two_line, '<p></p>').replace(one_line, '<br>');
-}
-
-var first_char = /\S/;
-
-function startRecognitionRu(event) {
-  if (recognizingRu) {
+async function startRecognitionRu(event) {
+  return new Promise((resolve, reject) => {
+  /*if (recognizingRu) {
     recognitionRu.stop();
     return;
-  }
-  final_transcript = '';
-  recognitionRu.lang = "ru-RU";
-  recognitionRu.start();
-  ignore_onend = false;
-  final_span.innerHTML = '';
-  interim_span.innerHTML = '';
-  start_img.src = 'mic-slash.gif';
-  start_timestamp = event.timeStamp;
+  }*/
+
+  recognitionRu.onresult = function(event) {
+        //var transcript = event.results[current][0].transcript;
+        //console.log(transcript);
+        onResultRu(event, resolve);
+        //recognition.stop();
+        //resolve(transcript);
+    }
+
+    //recognitionRu.onresult = onResultRu;
+
+    final_transcript = '';
+    recognitionRu.lang = "ru-RU";
+    recognitionRu.start();
+    ignore_onend = false;
+    final_span.innerHTML = '';
+    interim_span.innerHTML = '';
+    start_img.src = 'mic-slash.gif';
+    //start_timestamp = event.timeStamp;
+  });
 }
 
 function startRecognitionDE(event) {
@@ -380,10 +395,10 @@ function showInfo(s) {
   }
 }
 
-function next() {
+async function next() {
   if (lektionsNr < lektion.length - 1) {
     lektionsNr++;
-    zeigeLektion(lektionsNr);
+    await zeigeLektion(lektionsNr);
   }
 }
 
@@ -398,55 +413,58 @@ function RateToOne() {
   const rate = document.querySelector("#rate");
   rate.value = 1;
 }
-  function speakRu(text) {
-    // Create a new instance of SpeechSynthesisUtterance
-    const utterance = new SpeechSynthesisUtterance(text);
-    
-    // Set the language to Russian
-    utterance.lang = 'ru-RU';
-    
-    // Select a Russian voice if available
-    const voices = speechSynthesis.getVoices();
-    const russianVoice = voices.find(voice => voice.lang === 'ru-RU');
-    if (russianVoice) {
-        utterance.voice = russianVoice;
-    }
-    const rate = document.querySelector("#rate");
-    utterance.rate = rate.value;
-    
-    utterance.onend = function (event) {
-      startRecognitionRu(event);
-    }
+  async function speakRu(text) {
+    return new Promise((resolve, reject) => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      
+      // Set the language to Russian
+      utterance.lang = 'ru-RU';
+      
+      // Select a Russian voice if available
+      const voices = speechSynthesis.getVoices();
+      const russianVoice = voices.find(voice => voice.lang === 'ru-RU');
+      if (russianVoice) {
+          utterance.voice = russianVoice;
+      }
+      const rate = document.querySelector("#rate");
+      utterance.rate = rate.value;
+      
+      /*utterance.onend = function (event) {
+        startRecognitionRu(event);
+      }
 
-    stopRecognitions();
-    speechSynthesis.speak(utterance);
-
-    
+      stopRecognitions();*/
+      speechSynthesis.speak(utterance);
+      utterance.onend = resolve;
+    });
 }
 
-  function speakDE(text2, fnc = null) {
-    // Create a new instance of SpeechSynthesisUtterance
-    const utterance2 = new SpeechSynthesisUtterance(text2);
-    
-    // Set the language to German
-    utterance2.lang = 'de-DE';
-    
-    // Select a German voice if available
-    const voices = speechSynthesis.getVoices();
-    const germanVoice = voices.find(voice => voice.lang === 'de-DE');
-    if (germanVoice) {
-        utterance2.voice = germanVoice;
-    }
-    
-    if (fnc == null) {
-      utterance2.onend = function(event) {}
-    } else {
-      utterance2.onend = fnc;
-    }
+  async function speakDE(text2) {
+    return new Promise((resolve, reject) => {
+      // Create a new instance of SpeechSynthesisUtterance
+      const utterance2 = new SpeechSynthesisUtterance(text2);
+      
+      // Set the language to German
+      utterance2.lang = 'de-DE';
+      
+      // Select a German voice if available
+      const voices = speechSynthesis.getVoices();
+      const germanVoice = voices.find(voice => voice.lang === 'de-DE');
+      if (germanVoice) {
+          utterance2.voice = germanVoice;
+      }
+      
+      /*if (fnc == null) {
+        utterance2.onend = function(event) {}
+      } else {
+        utterance2.onend = fnc;
+      }*/
 
-    stopRecognitions();
-    // Speak the text
-    speechSynthesis.speak(utterance2);
+      // stopRecognitions();
+      // Speak the text
+      speechSynthesis.speak(utterance2);
+      utterance2.onend = resolve;
+    });
 }
 
 function stopRecognitions() {
@@ -469,14 +487,24 @@ function switchToGerman() {
   startRecognitionDE();
 }
 
-function zeigeLektion(nr) {
+async function zeigeLektion(nr) {
   document.getElementById("headline").textContent = "Lektion " + nr + ": Begrüßen";
   document.getElementById("text_de_ru").textContent = lektion[nr][0] + " " + 
     lektion[nr][1];
   
-  speakDE(lektion[nr][0]);
-  speakDE("heißt auf Russisch:");
-  speakRu(lektion[nr][1]);
+  await speakDE(lektion[nr][0]);
+  await speakDE("heißt auf Russisch:");
+  await speakRu(lektion[nr][1]);
+  russianRecognitionCorrect = false;
+  var word = await startRecognitionRu();
+  await onEndRu(word);
+  if (russianRecognitionCorrect) {
+    await speakDE("sehr gut"); 
+    next();
+  } else {
+    await speakDE("dies war leider falsch");
+    await zeigeLektion(nr);
+  }
 }
 function getUrlParam(param) {
     const urlParams = new URLSearchParams(window.location.search);
@@ -487,7 +515,7 @@ function retry() {
   speakRu(lektion[lektionsNr][1]);
 }
 
-function start() {
+async function start() {
   document.getElementById("startButton").style.visibility = "hidden";
   document.getElementById("content").style.visibility = "visible";
 
