@@ -281,6 +281,17 @@ function linebreak(s) {
 
 var first_char = /\S/;
 
+// https://stackoverflow.com/questions/75498609/safari-webkitspeechrecognition-continuous-bug
+function SeriouslyStopListening(recognition)
+{
+    if (navigator.vendor.indexOf('Apple') > -1)
+    {
+        try{ recognition.start(); }
+        catch(err) { }
+    }
+    recognition.stop();
+}
+
 function onResultRu(event, resolve) {
     var interim_transcript = '';
     for (var i = event.resultIndex; i < event.results.length; ++i) {
@@ -306,7 +317,7 @@ function onResultRu(event, resolve) {
     }
     
     if(cleanedStrVoice.includes(cleanedStrExpRes)) {
-      recognitionRu.stop();
+      SeriouslyStopListening(recognitionRu);
       resolve(final_transcript);
     }
   };
